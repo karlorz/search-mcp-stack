@@ -1,0 +1,25 @@
+services:
+  grok-search-mcp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        GROKSEARCH_SHA: aeb0f752c8ef086059db1aec5aa4ba3c3dba6844
+        GROKSEARCH_REPO: https://github.com/karlorz/GrokSearch.git
+    restart: unless-stopped
+    environment:
+      - GROK_SEARCH_MCP_TRANSPORT=http
+      - GROK_SEARCH_MCP_HOST=0.0.0.0
+      - GROK_SEARCH_MCP_PORT=8800
+      - GROK_SEARCH_MCP_PATH=/mcp
+      - GROK_SEARCH_MCP_VERIFY_URL=http://code-guda-gateway:8080/internal/keys/verify
+      - GROK_SEARCH_MCP_INTERNAL_TOKEN=${GROK_SEARCH_MCP_INTERNAL_TOKEN}
+      - GUDA_BASE_URL=http://code-guda-gateway:8080
+      - GUDA_API_KEY=${GUDA_API_KEY}
+    # No host port publication to prevent port collisions; routed via Coolify / reverse proxy network
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true

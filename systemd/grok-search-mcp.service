@@ -1,0 +1,29 @@
+[Unit]
+Description=Grok Search MCP Service (FastMCP HTTP)
+After=network.target
+
+[Service]
+Type=simple
+User=groksearch
+Group=groksearch
+WorkingDirectory=/opt/GrokSearch
+EnvironmentFile=/etc/grok-search-mcp.env
+# Loopback bind only (127.0.0.1:8800)
+ExecStart=/usr/local/bin/uv run --frozen grok-search
+Restart=always
+RestartSec=5
+
+# Hardening directives
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=/opt/GrokSearch/.venv
+
+[Install]
+WantedBy=multi-user.target
