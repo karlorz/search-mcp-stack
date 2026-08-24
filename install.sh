@@ -168,6 +168,18 @@ if [[ "$SKIP_PREREQS" == "0" ]]; then
   fi
 fi
 
+# Copy uv to a path groksearch can execute. The official installer often
+# leaves /usr/local/bin/uv as a symlink into /root/.local/bin.
+if [[ "$DRY_RUN" == "0" && "$RENDER_ONLY" == "0" && "$TEST_MODE" == "0" ]]; then
+  uv_src="$(command -v uv || true)"
+  if [[ -n "$uv_src" ]]; then
+    uv_real="$(readlink -f "$uv_src")"
+    log "Installing uv binary to /usr/local/libexec/uv from $uv_real"
+    mkdir -p /usr/local/libexec
+    install -m 0755 "$uv_real" /usr/local/libexec/uv
+  fi
+fi
+
 # 3. Clone or update GrokSearch repository
 T_GROKSEARCH_DIR="$(target_path "$GROKSEARCH_DIR")"
 mkdir -p "$(dirname "$T_GROKSEARCH_DIR")"
@@ -183,9 +195,18 @@ if [[ "$DRY_RUN" == "0" ]]; then
     cd "$T_GROKSEARCH_DIR"
     git fetch origin "$GROKSEARCH_REF" || git fetch origin
     git checkout "$GROKSEARCH_SHA"
-    uv sync --frozen
-    chown -R "$USER_NAME:$USER_NAME" "$T_GROKSEARCH_DIR"
   )
+  python_dir="$(target_path /opt/uv-python)"
+  cache_dir="$(target_path /opt/GrokSearch/.cache)"
+  mkdir -p "$python_dir" "$cache_dir"
+  chown -R "$USER_NAME:$USER_NAME" "$T_GROKSEARCH_DIR" "$python_dir" "$cache_dir"
+  uv_bin=/usr/local/libexec/uv
+  [[ -x "$uv_bin" ]] || uv_bin="$(command -v uv)"
+  log "Syncing venv as $USER_NAME with UV_PYTHON_INSTALL_DIR=$python_dir"
+  run_cmd sudo -u "$USER_NAME" env \
+    UV_PYTHON_INSTALL_DIR="$python_dir" \
+    UV_CACHE_DIR="$cache_dir" \
+    "$uv_bin" --directory "$T_GROKSEARCH_DIR" sync --frozen
 fi
 
 # 4. Service activation

@@ -8,8 +8,10 @@ User=groksearch
 Group=groksearch
 WorkingDirectory=/opt/GrokSearch
 EnvironmentFile=/etc/grok-search-mcp.env
-# Loopback bind only (127.0.0.1:8800)
-ExecStart=/usr/local/bin/uv run --frozen grok-search
+# Loopback bind only (127.0.0.1:8800). Use the venv console script, not
+# `uv run`: uv's managed CPython and the uv binary itself must not live
+# under /root (ProtectHome=true cannot follow those paths).
+ExecStart=/opt/GrokSearch/.venv/bin/grok-search
 Restart=always
 RestartSec=5
 
@@ -23,7 +25,7 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 RestrictRealtime=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
-ReadWritePaths=/opt/GrokSearch/.venv
+ReadWritePaths=/opt/GrokSearch /opt/uv-python
 
 [Install]
 WantedBy=multi-user.target

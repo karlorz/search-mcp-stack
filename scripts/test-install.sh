@@ -49,8 +49,9 @@ GUDA_GATEWAY_SHA="$(grep '^GUDA_GATEWAY_SHA=' "$VERSIONS_FILE" | cut -d= -f2)"
 # Assert systemd unit template / source
 UNIT_SRC="$ROOT/systemd/grok-search-mcp.service"
 assert_file "$UNIT_SRC"
-assert_contains "$UNIT_SRC" "uv run --frozen"
+assert_contains "$UNIT_SRC" "/opt/GrokSearch/.venv/bin/grok-search"
 assert_contains "$UNIT_SRC" "127.0.0.1"
+assert_contains "$UNIT_SRC" "ReadWritePaths=/opt/GrokSearch /opt/uv-python"
 assert_contains "$UNIT_SRC" "EnvironmentFile="
 assert_contains "$UNIT_SRC" "NoNewPrivileges=true"
 assert_contains "$UNIT_SRC" "ProtectSystem=strict"
@@ -69,6 +70,9 @@ assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_VERIFY_URL=http://127.0.0.1:8080
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_HOST=127.0.0.1"
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_PORT=8800"
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_PATH=/mcp"
+assert_contains "$ENV_EXAMPLE" "UV_PYTHON_INSTALL_DIR=/opt/uv-python"
+assert_contains "$ROOT/install.sh" "uv sync --frozen"
+assert_contains "$ROOT/install.sh" "/usr/local/libexec/uv"
 # Ensure no real tokens assigned
 if grep -E '^GROK_SEARCH_MCP_INTERNAL_TOKEN=[^#[:space:]]+' "$ENV_EXAMPLE" >/dev/null; then
   fail "env example should not contain real GROK_SEARCH_MCP_INTERNAL_TOKEN value"
@@ -136,7 +140,7 @@ assert_file "$INSTALLED_SERVICE"
 assert_file "$INSTALLED_ENV"
 assert_file "$INSTALLED_CADDY"
 
-assert_contains "$INSTALLED_SERVICE" "uv run --frozen"
+assert_contains "$INSTALLED_SERVICE" "/opt/GrokSearch/.venv/bin/grok-search"
 assert_contains "$INSTALLED_SERVICE" "EnvironmentFile=/etc/grok-search-mcp.env"
 assert_contains "$INSTALLED_SERVICE" "User=groksearch"
 
