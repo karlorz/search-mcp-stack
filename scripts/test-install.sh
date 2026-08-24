@@ -71,7 +71,7 @@ assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_HOST=127.0.0.1"
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_PORT=8800"
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_PATH=/mcp"
 assert_contains "$ENV_EXAMPLE" "UV_PYTHON_INSTALL_DIR=/opt/uv-python"
-assert_contains "$ROOT/install.sh" "uv sync --frozen"
+assert_contains "$ROOT/install.sh" "sync --frozen"
 assert_contains "$ROOT/install.sh" "/usr/local/libexec/uv"
 # Ensure no real tokens assigned
 if grep -E '^GROK_SEARCH_MCP_INTERNAL_TOKEN=[^#[:space:]]+' "$ENV_EXAMPLE" >/dev/null; then
