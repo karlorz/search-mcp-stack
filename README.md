@@ -26,10 +26,10 @@ Deployment packaging and configuration stack for GrokSearch FastMCP HTTP server 
                         │    (FastMCP)    │       │  (Admin / Keys) │
                         └────────┬────────┘       └────────┬────────┘
                                  │                         ▲
-                                 │ Bearer Token Verify     │
+                                 │ Token Verify            │
                                  └─────────────────────────┘
                                http://127.0.0.1:8080/internal/keys/verify
-                               (Bearer GROK_SEARCH_MCP_INTERNAL_TOKEN)
+                               (X-Internal-Token: GROK_SEARCH_MCP_INTERNAL_TOKEN)
 ```
 
 1. **Caddy Ingress (`search.karldigi.dev`)**:
@@ -39,7 +39,7 @@ Deployment packaging and configuration stack for GrokSearch FastMCP HTTP server 
 
 2. **Authentication Flow**:
    - Client sends request to `https://search.karldigi.dev/mcp` with `Authorization: Bearer <gateway_user_key>`.
-   - GrokSearch calls `POST http://127.0.0.1:8080/internal/keys/verify` sending `Authorization: Bearer <GROK_SEARCH_MCP_INTERNAL_TOKEN>` and JSON body `{"key": "<gateway_user_key>"}`.
+   - GrokSearch calls `POST http://127.0.0.1:8080/internal/keys/verify` sending header `X-Internal-Token: <GROK_SEARCH_MCP_INTERNAL_TOKEN>` and JSON body `{"token": "<gateway_user_key>"}`.
    - If verified, GrokSearch processes the search tool request, forwarding queries to `GUDA_BASE_URL` with machine key `GUDA_API_KEY`.
 
 ## macOS / Client Configuration

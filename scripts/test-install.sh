@@ -80,6 +80,13 @@ if grep -E '^GUDA_API_KEY=[^#[:space:]]+' "$ENV_EXAMPLE" >/dev/null; then
   fail "env example should not contain real GUDA_API_KEY value"
 fi
 
+# Assert README internal verify contract documentation
+README_FILE="$ROOT/README.md"
+assert_file "$README_FILE"
+assert_contains "$README_FILE" "X-Internal-Token: GROK_SEARCH_MCP_INTERNAL_TOKEN"
+assert_contains "$README_FILE" '{"token": "<gateway_user_key>"}'
+assert_not_contains "$README_FILE" '{"key": "<gateway_user_key>"}'
+
 # Assert Caddy template / snippet
 CADDY_SRC="$ROOT/caddy/Caddyfile.code-guda-gateway"
 assert_file "$CADDY_SRC"
