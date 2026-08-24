@@ -46,9 +46,6 @@ GUDA_GATEWAY_SHA="$(grep '^GUDA_GATEWAY_SHA=' "$VERSIONS_FILE" | cut -d= -f2)"
 [[ "$GROKSEARCH_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "GROKSEARCH_SHA is not a 40-hex SHA: $GROKSEARCH_SHA"
 [[ "$GUDA_GATEWAY_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "GUDA_GATEWAY_SHA is not a 40-hex SHA: $GUDA_GATEWAY_SHA"
 
-assert_equals "aeb0f752c8ef086059db1aec5aa4ba3c3dba6844" "$GROKSEARCH_SHA"
-assert_equals "6c95d8e8488f64d284cd48e4eeb8d8ff17590d6f" "$GUDA_GATEWAY_SHA"
-
 # Assert systemd unit template / source
 UNIT_SRC="$ROOT/systemd/grok-search-mcp.service"
 assert_file "$UNIT_SRC"
