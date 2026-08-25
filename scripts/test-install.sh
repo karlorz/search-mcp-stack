@@ -46,6 +46,21 @@ GUDA_GATEWAY_SHA="$(grep '^GUDA_GATEWAY_SHA=' "$VERSIONS_FILE" | cut -d= -f2)"
 [[ "$GROKSEARCH_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "GROKSEARCH_SHA is not a 40-hex SHA: $GROKSEARCH_SHA"
 [[ "$GUDA_GATEWAY_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "GUDA_GATEWAY_SHA is not a 40-hex SHA: $GUDA_GATEWAY_SHA"
 
+if [[ -f "$ROOT/.gitmodules" ]]; then
+  assert_contains "$ROOT/.gitmodules" "path = mcp"
+  assert_contains "$ROOT/.gitmodules" "path = gateway"
+  assert_contains "$ROOT/.gitmodules" "https://github.com/karlorz/GrokSearch.git"
+  assert_contains "$ROOT/.gitmodules" "https://github.com/karlorz/code-guda-gateway.git"
+fi
+if [[ -d "$ROOT/mcp/.git" || -f "$ROOT/mcp/.git" ]]; then
+  mcp_head="$(git -C "$ROOT/mcp" rev-parse HEAD)"
+  assert_equals "$GROKSEARCH_SHA" "$mcp_head"
+fi
+if [[ -d "$ROOT/gateway/.git" || -f "$ROOT/gateway/.git" ]]; then
+  gateway_head="$(git -C "$ROOT/gateway" rev-parse HEAD)"
+  assert_equals "$GUDA_GATEWAY_SHA" "$gateway_head"
+fi
+
 # Assert systemd unit template / source
 UNIT_SRC="$ROOT/systemd/grok-search-mcp.service"
 assert_file "$UNIT_SRC"
@@ -114,7 +129,9 @@ if grep -E '^\s*-\s*["'\'']?[0-9]+:8800' "$COMPOSE_COOLIFY" >/dev/null; then
 fi
 
 # Assert no leaked secrets in repo tree
-if grep -rnE '(gsk_[a-zA-Z0-9_-]{20,}|sk-[a-zA-Z0-9_-]{20,})' "$ROOT" --exclude-dir=.git | grep -v 'test-install.sh' >/dev/null; then
+if grep -rnE '(gsk_[a-zA-Z0-9_-]{20,}|sk-[a-zA-Z0-9_-]{20,})' "$ROOT" \
+  --exclude-dir=.git --exclude-dir=mcp --exclude-dir=gateway \
+  | grep -v 'test-install.sh' >/dev/null; then
   fail "Found apparent real secret tokens (gsk_... or sk-...) in repository"
 fi
 

@@ -2,6 +2,20 @@
 
 Deployment packaging and configuration stack for GrokSearch FastMCP HTTP server with `code-guda-gateway` token verification and Caddy ingress.
 
+This is a **pin-harvest monorepo**, not a merged binary. FastMCP and the GuDa gateway stay two processes. Product source is vendored as git submodules at the SHAs in `versions.env`:
+
+| Path | Product | Pin |
+| --- | --- | --- |
+| `mcp/` | `karlorz/GrokSearch` (`feat/gateway-token-verifier`) | `GROKSEARCH_SHA` |
+| `gateway/` | `karlorz/code-guda-gateway` (`feat/internal-keys-verify`) | `GUDA_GATEWAY_SHA` |
+
+kr01 install still clones those pins into `/opt/GrokSearch` and the gateway install path. The submodules are the in-repo source tree for development and later refactor. Do not fold MCP tool handlers into the Go gateway.
+
+```bash
+git clone --recurse-submodules https://github.com/karlorz/search-mcp-stack.git
+git submodule update --init --recursive
+```
+
 ## Architecture Overview
 
 ```
