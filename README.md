@@ -6,7 +6,7 @@ This is a **pin-harvest monorepo**, not a merged binary. FastMCP and the GuDa ga
 
 | Path | Product | Pin |
 | --- | --- | --- |
-| `mcp/` | `karlorz/GrokSearch` (`feat/gateway-token-verifier`) | `GROKSEARCH_SHA` |
+| `mcp/` | `karlorz/GrokSearch` (`grok-with-tavily`) | `GROKSEARCH_SHA` |
 | `gateway/` | `karlorz/code-guda-gateway` (`feat/internal-keys-verify`) | `GUDA_GATEWAY_SHA` |
 
 kr01 install still clones those pins into `/opt/GrokSearch` and the gateway install path. The submodules are the in-repo source tree for development and later refactor. Do not fold MCP tool handlers into the Go gateway.
@@ -56,6 +56,11 @@ git submodule update --init --recursive
    - GrokSearch calls `POST http://127.0.0.1:8080/internal/keys/verify` sending header `X-Internal-Token: <GROK_SEARCH_MCP_INTERNAL_TOKEN>` and JSON body `{"token": "<gateway_user_key>"}`.
    - If verified, GrokSearch processes the search tool request, forwarding queries to `GUDA_BASE_URL` with machine key `GUDA_API_KEY`.
 
+3. **Public Engine Identity**:
+   - A fresh install renders `GROK_SEARCH_MCP_PUBLIC_URL=https://search.karldigi.dev/mcp` into `/etc/grok-search-mcp.env` from the selected `--domain` and MCP path.
+   - `get_config_info` uses this value to confirm that the client is using the remote HTTP plugin engine. It never exposes loopback upstream URLs, credentials, local paths, upstream error bodies, or exception details.
+   - This value is descriptive only; Caddy and internal service routing remain unchanged.
+
 ## macOS / Client Configuration
 
 Clients (Cursor, Claude Desktop, Roo, etc.) connect via SSE/HTTP without needing local `uv` or Python runtimes:
@@ -98,5 +103,7 @@ sudo ./install.sh --domain search.karldigi.dev --listen-addr 127.0.0.1:8080
 ## Updating
 
 ```bash
-sudo ./update.sh
+sudo ./update.sh --public-mcp-url https://search.karldigi.dev/mcp
 ```
+
+On the first update after this feature lands, pass the deployment's real public URL explicitly. `update.sh` adds it to an existing `/etc/grok-search-mcp.env` only when the variable is absent. Existing credentials and operator-defined values are preserved, repeated updates do not duplicate the entry, and a custom-domain deployment is never mislabeled with the production default.
