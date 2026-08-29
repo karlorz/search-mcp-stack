@@ -1,7 +1,7 @@
 [submodule "mcp"]
 	path = mcp
 	url = https://github.com/karlorz/GrokSearch.git
-	branch = feat/gateway-token-verifier
+	branch = grok-with-tavily
 [submodule "gateway"]
 	path = gateway
 	url = https://github.com/karlorz/code-guda-gateway.git

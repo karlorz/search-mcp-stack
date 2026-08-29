@@ -85,6 +85,19 @@ if [[ ! -f "$VERSIONS_FILE" ]]; then
 fi
 # shellcheck disable=SC1090
 source "$VERSIONS_FILE"
+PUBLIC_MCP_URL="${GROK_SEARCH_MCP_PUBLIC_URL:-https://${DOMAIN}${GROK_SEARCH_MCP_PATH}}"
+
+if [[ ! "$DOMAIN" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]]; then
+  printf 'Error: --domain must be a DNS name with an optional port\n' >&2
+  exit 1
+fi
+if [[ ! "$PUBLIC_MCP_URL" =~ ^https?://[^/?#[:space:]@]+(/[^?#[:space:]]*)?$ ]]; then
+  printf 'Error: GROK_SEARCH_MCP_PUBLIC_URL must be an absolute HTTP(S) URL without credentials, query, fragment, or whitespace\n' >&2
+  exit 1
+fi
+PUBLIC_MCP_URL_SED="${PUBLIC_MCP_URL//\\/\\\\}"
+PUBLIC_MCP_URL_SED="${PUBLIC_MCP_URL_SED//&/\\&}"
+PUBLIC_MCP_URL_SED="${PUBLIC_MCP_URL_SED//|/\\|}"
 
 log() {
   printf '==> %s\n' "$1"
@@ -134,7 +147,9 @@ cp "$SCRIPT_DIR/systemd/grok-search-mcp.service" "$T_SERVICE"
 
 if [[ ! -f "$T_ENV" ]]; then
   log "Installing initial environment file to $T_ENV"
-  cp "$SCRIPT_DIR/systemd/grok-search-mcp.env.example" "$T_ENV"
+  sed \
+    -e "s|{{PUBLIC_MCP_URL}}|$PUBLIC_MCP_URL_SED|g" \
+    "$SCRIPT_DIR/systemd/grok-search-mcp.env.example" > "$T_ENV"
   chmod 600 "$T_ENV" 2>/dev/null || true
 else
   log "Environment file $T_ENV already exists; keeping existing configuration"
