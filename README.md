@@ -52,9 +52,10 @@ git submodule update --init --recursive
    - All other routes fall through to `code-guda-gateway` on `127.0.0.1:8080` (admin UI and gateway proxy APIs).
 
 2. **Authentication Flow**:
-   - Client sends request to `https://search.karldigi.dev/mcp` with `Authorization: Bearer <gateway_user_key>`.
+   - Bearer clients send `Authorization: Bearer <gateway_user_key>` to `https://search.karldigi.dev/mcp`.
    - GrokSearch calls `POST http://127.0.0.1:8080/internal/keys/verify` sending header `X-Internal-Token: <GROK_SEARCH_MCP_INTERNAL_TOKEN>` and JSON body `{"token": "<gateway_user_key>"}`.
    - If verified, GrokSearch processes the search tool request, forwarding queries to `GUDA_BASE_URL` with machine key `GUDA_API_KEY`.
+   - ChatGPT web and Doubao use OAuth instead of a pasted bearer. Discovery, registration, consent, and token routes stay on the gateway (Caddy fallback). `/mcp` stays on FastMCP. Set `GROK_SEARCH_MCP_OAUTH_ISSUER` only after the gateway is serving `/.well-known/oauth-protected-resource/mcp`. OAuth-minted `gsk_` keys are for `/mcp` only. `install.sh` and `update.sh` deploy the GrokSearch checkout, not the gateway pin; deploy the gateway with its own installer first.
 
 3. **Public Engine Identity**:
    - A fresh install renders `GROK_SEARCH_MCP_PUBLIC_URL=https://search.karldigi.dev/mcp` into `/etc/grok-search-mcp.env` from the selected `--domain` and MCP path.
@@ -95,10 +96,11 @@ sudo ./install.sh --domain search.karldigi.dev --listen-addr 127.0.0.1:8080
 ```
 
 1. Edit `/etc/grok-search-mcp.env` to set `GROK_SEARCH_MCP_INTERNAL_TOKEN` and `GUDA_API_KEY`.
-2. Restart the service:
+2. Restart the service after the env file is filled:
    ```bash
    sudo systemctl restart grok-search-mcp
    ```
+3. For connector OAuth, deploy the gateway first (`GUDA_OAUTH_ISSUER` and `GUDA_OAUTH_OPERATOR_PASSWORD_HASH` on the gateway). Then set `GROK_SEARCH_MCP_OAUTH_ISSUER` to the public origin and restart `grok-search-mcp` again. Leave the issuer unset until that gateway metadata URL returns 200.
 
 ## Updating
 

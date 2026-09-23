@@ -16,6 +16,7 @@ services:
       - GROK_SEARCH_MCP_INTERNAL_TOKEN=${GROK_SEARCH_MCP_INTERNAL_TOKEN}
       - GUDA_BASE_URL=http://code-guda-gateway:8080
       - GUDA_API_KEY=${GUDA_API_KEY}
+      - GROK_SEARCH_MCP_OAUTH_ISSUER=${GROK_SEARCH_MCP_OAUTH_ISSUER:-}
     # No host port publication to prevent port collisions; routed via Coolify / reverse proxy network
     networks:
       - coolify

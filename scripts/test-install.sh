@@ -92,6 +92,7 @@ assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_HOST=127.0.0.1"
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_PORT=8800"
 assert_contains "$ENV_EXAMPLE" "GROK_SEARCH_MCP_PATH=/mcp"
 assert_contains "$ENV_EXAMPLE" 'GROK_SEARCH_MCP_PUBLIC_URL={{PUBLIC_MCP_URL}}'
+assert_contains "$ENV_EXAMPLE" "# GROK_SEARCH_MCP_OAUTH_ISSUER="
 assert_contains "$ENV_EXAMPLE" "UV_PYTHON_INSTALL_DIR=/opt/uv-python"
 assert_contains "$ROOT/install.sh" "sync --frozen"
 assert_contains "$ROOT/install.sh" "/usr/local/libexec/uv"
@@ -113,6 +114,7 @@ fi
 README_FILE="$ROOT/README.md"
 assert_file "$README_FILE"
 assert_contains "$README_FILE" "X-Internal-Token: GROK_SEARCH_MCP_INTERNAL_TOKEN"
+assert_contains "$README_FILE" "GROK_SEARCH_MCP_OAUTH_ISSUER"
 assert_contains "$README_FILE" '{"token": "<gateway_user_key>"}'
 assert_not_contains "$README_FILE" '{"key": "<gateway_user_key>"}'
 
