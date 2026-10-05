@@ -5,4 +5,4 @@
 [submodule "gateway"]
 	path = gateway
 	url = https://github.com/karlorz/code-guda-gateway.git
-	branch = feat/internal-keys-verify
+	branch = main
