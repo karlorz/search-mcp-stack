@@ -48,14 +48,18 @@ git submodule update --init --recursive
 
 1. **Caddy Ingress (`search.karldigi.dev`)**:
    - `/internal*` routes are rejected immediately with HTTP 404 (protecting internal verification endpoints).
+   - CLI auth routes (`/auth/cli/start`, `/auth/cli/approve`, `/auth/cli/callback`, `/auth/cli/check`) proxy to GrokSearch on `127.0.0.1:8800`. Unknown `/auth/cli/*` paths are not wildcard-proxied.
+   - M2 REST routes (`/api/v1/search`, `/api/v1/fetch`, `/api/v1/map`) proxy to GrokSearch on `127.0.0.1:8800`; unknown `/api/v1/*` paths are not wildcard-proxied to 8800 and fall through to the gateway.
    - `/mcp*` routes proxy to GrokSearch FastMCP HTTP transport on `127.0.0.1:8800` (`flush_interval -1` for streaming).
-   - All other routes fall through to `code-guda-gateway` on `127.0.0.1:8080` (admin UI and gateway proxy APIs).
+   - All other routes fall through to `code-guda-gateway` on `127.0.0.1:8080` (admin UI, OAuth discovery/authorize/register/token, and gateway proxy APIs).
 
 2. **Authentication Flow**:
    - Bearer clients send `Authorization: Bearer <gateway_user_key>` to `https://search.karldigi.dev/mcp`.
    - GrokSearch calls `POST http://127.0.0.1:8080/internal/keys/verify` sending header `X-Internal-Token: <GROK_SEARCH_MCP_INTERNAL_TOKEN>` and JSON body `{"token": "<gateway_user_key>"}`.
    - If verified, GrokSearch processes the search tool request, forwarding queries to `GUDA_BASE_URL` with machine key `GUDA_API_KEY`.
    - ChatGPT web and Doubao use OAuth instead of a pasted bearer. Discovery, registration, consent, and token routes stay on the gateway (Caddy fallback). `/mcp` stays on FastMCP. Set `GROK_SEARCH_MCP_OAUTH_ISSUER` only after the gateway is serving `/.well-known/oauth-protected-resource/mcp`. OAuth-minted `gsk_` keys are for `/mcp` only. `install.sh` and `update.sh` deploy the GrokSearch checkout, not the gateway pin; deploy the gateway with its own installer first.
+   - For `grok-search` Skill+CLI OAuth (`auth-start` / `auth-status`), GrokSearch acts as the approve+poll coordinator bridging to the gateway OAuth server. Install/update in this repo deploys GrokSearch MCP and stack Caddy routing, not the gateway. The operator provisions the fixed public CLI OAuth client on the deployed gateway via `POST /register` with redirect URI `https://search.karldigi.dev/auth/cli/callback`, then puts the returned `client_id` in `/etc/grok-search-mcp.env` (`GROK_SEARCH_CLI_OAUTH_CLIENT_ID`).
+   - **Template Drift Note**: The gateway installer maintains its own template at `gateway/scripts/templates/Caddyfile.code-guda-gateway` which only knows about `/internal*` and fallback. If the gateway installer is rerun, the stack-owned Caddy snippet (`caddy/Caddyfile.code-guda-gateway`) must be reapplied (e.g. by rerunning `install.sh --skip-mcp` or copying the snippet) so that `/auth/cli/*` and `/mcp*` routes to port 8800 are not overwritten.
 
 3. **Public Engine Identity**:
    - A fresh install renders `GROK_SEARCH_MCP_PUBLIC_URL=https://search.karldigi.dev/mcp` into `/etc/grok-search-mcp.env` from the selected `--domain` and MCP path.
