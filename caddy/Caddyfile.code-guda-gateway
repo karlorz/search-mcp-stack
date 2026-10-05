@@ -3,6 +3,69 @@
 		respond 404
 	}
 
+	handle /auth/cli/start {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /auth/cli/approve {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /auth/cli/callback {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /auth/cli/check {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /api/v1/search {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /api/v1/fetch {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /api/v1/map {
+		reverse_proxy 127.0.0.1:8800 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
 	handle /mcp* {
 		reverse_proxy 127.0.0.1:8800 {
 			flush_interval -1
