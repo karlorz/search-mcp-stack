@@ -47,14 +47,14 @@ GUDA_GATEWAY_SHA="$(grep '^GUDA_GATEWAY_SHA=' "$VERSIONS_FILE" | cut -d= -f2)"
 
 [[ "$GROKSEARCH_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "GROKSEARCH_SHA is not a 40-hex SHA: $GROKSEARCH_SHA"
 [[ "$GUDA_GATEWAY_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "GUDA_GATEWAY_SHA is not a 40-hex SHA: $GUDA_GATEWAY_SHA"
-assert_equals "grok-with-tavily" "$GROKSEARCH_REF"
+assert_equals "main" "$GROKSEARCH_REF"
 
 if [[ -f "$ROOT/.gitmodules" ]]; then
   assert_contains "$ROOT/.gitmodules" "path = mcp"
   assert_contains "$ROOT/.gitmodules" "path = gateway"
   assert_contains "$ROOT/.gitmodules" "https://github.com/karlorz/GrokSearch.git"
   assert_contains "$ROOT/.gitmodules" "https://github.com/karlorz/code-guda-gateway.git"
-  assert_contains "$ROOT/.gitmodules" "branch = grok-with-tavily"
+  assert_contains "$ROOT/.gitmodules" "branch = main"
 fi
 if [[ -d "$ROOT/mcp/.git" || -f "$ROOT/mcp/.git" ]]; then
   mcp_head="$(git -C "$ROOT/mcp" rev-parse HEAD)"

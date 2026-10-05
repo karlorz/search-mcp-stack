@@ -1,7 +1,7 @@
 [submodule "mcp"]
 	path = mcp
 	url = https://github.com/karlorz/GrokSearch.git
-	branch = grok-with-tavily
+	branch = main
 [submodule "gateway"]
 	path = gateway
 	url = https://github.com/karlorz/code-guda-gateway.git
