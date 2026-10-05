@@ -6,7 +6,7 @@ This is a **pin-harvest monorepo**, not a merged binary. FastMCP and the GuDa ga
 
 | Path | Product | Pin |
 | --- | --- | --- |
-| `mcp/` | `karlorz/GrokSearch` (`grok-with-tavily`) | `GROKSEARCH_SHA` |
+| `mcp/` | `karlorz/GrokSearch` (`main`) | `GROKSEARCH_SHA` |
 | `gateway/` | `karlorz/code-guda-gateway` (`feat/internal-keys-verify`) | `GUDA_GATEWAY_SHA` |
 
 kr01 install still clones those pins into `/opt/GrokSearch` and the gateway install path. The submodules are the in-repo source tree for development and later refactor. Do not fold MCP tool handlers into the Go gateway.
