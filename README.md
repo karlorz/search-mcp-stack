@@ -114,6 +114,26 @@ sudo ./update.sh --public-mcp-url https://search.karldigi.dev/mcp
 
 On the first update after this feature lands, pass the deployment's real public URL explicitly. `update.sh` adds it to an existing `/etc/grok-search-mcp.env` only when the variable is absent. Existing credentials and operator-defined values are preserved, repeated updates do not duplicate the entry, and a custom-domain deployment is never mislabeled with the production default.
 
+The exact ingress drift gate compares the installed snippet against the reviewed
+template rendered with the same `DOMAIN` and `LISTEN_ADDR` used at installation.
+Record both non-secret inputs in the deployment's operator configuration. For a
+custom install, repeat those exact values on every update; `--public-mcp-url`
+does not supply the Caddy render inputs:
+
+```bash
+sudo ./install.sh --domain connector.example.invalid --listen-addr 127.0.0.1:8181
+sudo ./update.sh --domain connector.example.invalid --listen-addr 127.0.0.1:8181 \
+  --public-mcp-url https://connector.example.invalid/mcp
+sudo env DOMAIN=connector.example.invalid LISTEN_ADDR=127.0.0.1:8181 \
+  bash scripts/check-caddy-drift.sh
+```
+
+`DOMAIN` and `LISTEN_ADDR` environment variables also work when explicitly passed
+through `sudo env`. The gate never learns expected values from an unreviewed
+installed snippet. A wrong/missing custom input fails closed before service
+mutation; reapply the reviewed template with the recorded inputs, validate the
+full Caddy config, and reload before updating.
+
 ## CLI bridge validation and rollout gates
 
 `bash scripts/test-cli-gateway-feasibility.sh` exports the exact `GUDA_GATEWAY_SHA`,
@@ -129,6 +149,10 @@ collection response requires a new approval; never retry the code exchange or
 recover a machine key. Provision a fixed public client only after verifying the
 deployed gateway OAuth metadata, then set the client ID in the service env. Only
 `https://search.karldigi.dev/auth/cli/callback` is allowed for that client. Keep
+the client ID unset/blank on custom-origin or loopback MCP deployments; CLI
+auth then returns bounded unavailable responses and MCP retains its independent
+issuer validation and lifecycle. Enabling CLI auth requires the pinned public
+origin, issuer/callback and trusted loopback gateway exchange configuration. Keep
 operator passwords on the gateway page. Source tests do not establish deployed
 phone/QR/Grok acceptance, and do not authorize a production reload or a new pin.
 The existing M2 routes remain available; no new M2 rollout is part of this repair.

@@ -55,6 +55,8 @@ try:
         text = text.replace('{{DOMAIN}}', f'http://127.0.0.1:{port}')
         text = text.replace('{{LISTEN_ADDR}}', f'127.0.0.1:{gateway.server_port}')
         text = text.replace('127.0.0.1:8800', f'127.0.0.1:{mcp.server_port}')
+        access_log = directory / 'access.jsonl'
+        text = text.replace(' {\n', ' {\n\tlog {\n\t\toutput file ' + str(access_log) + '\n\t\tformat json\n\t}\n', 1)
         config.write_text('{\n admin off\n auto_https off\n}\n' + text)
         subprocess.run([CADDY, 'adapt', '--config', str(config), '--adapter', 'caddyfile', '--validate'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         with (directory / 'caddy.log').open('w+') as log:
@@ -79,8 +81,8 @@ try:
                     with request(route, 'POST' if route in ['/auth/cli/start', '/api/v1/search', '/api/v1/fetch', '/api/v1/map'] else 'GET') as response:
                         data = json.load(response)
                         assert data == {'upstream': 'mcp', 'path': route}, data
-                for route in ['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource/mcp', '/authorize', '/register', '/token', '/admin', '/health', '/grok/v1/models']:
-                    with request(route) as response:
+                for route in ['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource/mcp', '/authorize?state=dummy-sensitive-authorize', '/register', '/token?code=dummy-sensitive-token', '/admin', '/health?control=ordinary-request', '/grok/v1/models']:
+                    with request(route, 'POST' if route.startswith('/token?') else 'GET') as response:
                         assert json.load(response) == {'upstream': 'gateway', 'path': route}
                 before = (len(mcp_seen), len(gateway_seen))
                 for route in ['/internal', '/internal/keys/verify', '/internal-other', '/auth/cli/unknown']:
@@ -96,7 +98,14 @@ try:
             log.seek(0)
             logged = log.read()
             assert 'dummy-sensitive-code' not in logged and 'dummy-sensitive-state' not in logged
-        print('Caddy adapt/validate and 20 staged route probes passed; denied routes never reached upstream.')
+        access_text = access_log.read_text()
+        access_entries = [json.loads(line) for line in access_text.splitlines()]
+        logged_urls = [entry['request']['uri'] for entry in access_entries]
+        assert '/health?control=ordinary-request' in logged_urls, 'ordinary control request missing from actual HTTP access log'
+        assert '/mcp' in logged_urls, 'MCP control request missing from actual HTTP access log'
+        assert not any(url.split('?')[0] in ['/authorize', '/token'] or url.startswith('/auth/cli/') for url in logged_urls), logged_urls
+        assert 'dummy-sensitive-' not in access_text
+        print('Caddy adapt/validate and 20 staged route probes passed; actual HTTP access log records controls and skips sensitive URLs.')
 finally:
     mcp.shutdown()
     mcp.server_close()

@@ -8,10 +8,20 @@ GROKSEARCH_DIR="${GROKSEARCH_DIR:-/opt/GrokSearch}"
 ENV_FILE="${ENV_FILE:-/etc/grok-search-mcp.env}"
 SERVICE_NAME="grok-search-mcp"
 PUBLIC_MCP_URL="${GROK_SEARCH_MCP_PUBLIC_URL:-}"
+DOMAIN="${DOMAIN:-}"
+LISTEN_ADDR="${LISTEN_ADDR:-}"
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --domain|--listen-addr)
+      if [[ $# -lt 2 || "$2" == --* ]]; then
+        printf 'Error: %s requires a value\n' "$1" >&2
+        exit 1
+      fi
+      if [[ "$1" == "--domain" ]]; then DOMAIN="$2"; else LISTEN_ADDR="$2"; fi
+      shift 2
+      ;;
     --dry-run)
       DRY_RUN=1
       shift
@@ -31,6 +41,8 @@ Usage: $0 [options]
 Options:
   --dry-run                 Show actions without executing state-changing commands
   --public-mcp-url URL      Add the deployment's public MCP URL when absent
+  --domain DOMAIN           Exact installed Caddy render domain (or DOMAIN env)
+  --listen-addr ADDR        Exact installed gateway address (or LISTEN_ADDR env)
   -h, --help                Show this message
 EOF
       exit 0
@@ -118,7 +130,7 @@ validate_public_mcp_url
 
 # Another installer must not silently replace the stack-owned ingress.
 if [[ "$DRY_RUN" != "1" ]]; then
-  bash "$SCRIPT_DIR/scripts/check-caddy-drift.sh"
+  DOMAIN="$DOMAIN" LISTEN_ADDR="$LISTEN_ADDR" bash "$SCRIPT_DIR/scripts/check-caddy-drift.sh"
 fi
 
 log "Updating GrokSearch at $T_GROKSEARCH_DIR to SHA $GROKSEARCH_SHA"

@@ -233,6 +233,24 @@ if SEARCH_STACK_TEST_MODE=1 INSTALL_ROOT="$FAKE_ROOT" bash "$ROOT/update.sh" >/d
 fi
 cp "$TMP/reviewed-caddy" "$INSTALLED_CADDY"
 
+printf '=== Step 2d: Exact custom render inputs on update ===\n'
+DOMAIN=connector.example.invalid LISTEN_ADDR=127.0.0.1:8181 \
+  bash "$ROOT/scripts/render-caddy.sh" > "$INSTALLED_CADDY"
+DOMAIN=connector.example.invalid LISTEN_ADDR=127.0.0.1:8181 INSTALL_ROOT="$FAKE_ROOT" \
+  bash "$ROOT/scripts/check-caddy-drift.sh" >/dev/null
+SEARCH_STACK_TEST_MODE=1 INSTALL_ROOT="$FAKE_ROOT" \
+  bash "$ROOT/update.sh" --domain connector.example.invalid --listen-addr 127.0.0.1:8181 >/dev/null
+if SEARCH_STACK_TEST_MODE=1 INSTALL_ROOT="$FAKE_ROOT" \
+  bash "$ROOT/update.sh" --domain wrong.example.invalid --listen-addr 127.0.0.1:8181 >/dev/null 2>&1; then
+  fail "wrong custom render input must fail closed"
+fi
+printf '\n# unreviewed drift\n' >> "$INSTALLED_CADDY"
+if SEARCH_STACK_TEST_MODE=1 INSTALL_ROOT="$FAKE_ROOT" \
+  bash "$ROOT/update.sh" --domain connector.example.invalid --listen-addr 127.0.0.1:8181 >/dev/null 2>&1; then
+  fail "custom render inputs must not bypass the exact drift gate"
+fi
+cp "$TMP/reviewed-caddy" "$INSTALLED_CADDY"
+
 printf '=== Step 3: Test idempotency (do not overwrite existing env) ===\n'
 
 printf 'EXISTING_CUSTOM_CONFIG=keep_me\n' > "$INSTALLED_ENV"
