@@ -116,6 +116,11 @@ T_GROKSEARCH_DIR="$(target_path "$GROKSEARCH_DIR")"
 T_ENV="$(target_path "$ENV_FILE")"
 validate_public_mcp_url
 
+# Another installer must not silently replace the stack-owned ingress.
+if [[ "$DRY_RUN" != "1" ]]; then
+  bash "$SCRIPT_DIR/scripts/check-caddy-drift.sh"
+fi
+
 log "Updating GrokSearch at $T_GROKSEARCH_DIR to SHA $GROKSEARCH_SHA"
 
 if [[ "$TEST_MODE" == "1" || "$DRY_RUN" == "1" ]]; then

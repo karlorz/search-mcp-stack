@@ -1,4 +1,7 @@
 {{DOMAIN}} {
+	# Never retain callback codes, approval references or authorization parameters.
+	@sensitive path /auth/cli/* /authorize /token
+	log_skip @sensitive
 	handle /internal* {
 		respond 404
 	}
@@ -37,6 +40,10 @@
 			header_up X-Forwarded-For {remote_host}
 			header_up X-Forwarded-Proto {scheme}
 		}
+	}
+
+	handle /auth/cli/* {
+		respond 404
 	}
 
 	handle /api/v1/search {

@@ -157,10 +157,7 @@ fi
 
 if [[ "$SKIP_CADDY" == "0" ]]; then
   log "Rendering Caddy snippet to $T_CADDY"
-  sed \
-    -e "s|{{DOMAIN}}|$DOMAIN|g" \
-    -e "s|{{LISTEN_ADDR}}|$LISTEN_ADDR|g" \
-    "$SCRIPT_DIR/caddy/Caddyfile.code-guda-gateway" > "$T_CADDY"
+  DOMAIN="$DOMAIN" LISTEN_ADDR="$LISTEN_ADDR" bash "$SCRIPT_DIR/scripts/render-caddy.sh" > "$T_CADDY"
 fi
 
 if [[ "$RENDER_ONLY" == "1" || "$TEST_MODE" == "1" ]]; then

@@ -221,6 +221,18 @@ assert_contains \
   "$ESCAPED_ROOT/etc/grok-search-mcp.env" \
   "GROK_SEARCH_MCP_PUBLIC_URL=https://search.karldigi.dev/mcp&preview"
 
+printf '=== Step 2c: Gateway installer drift gate ===\n'
+INSTALL_ROOT="$FAKE_ROOT" bash "$ROOT/scripts/check-caddy-drift.sh" >/dev/null
+cp "$INSTALLED_CADDY" "$TMP/reviewed-caddy"
+printf 'search.karldigi.dev { respond 404 }\n' > "$INSTALLED_CADDY"
+if INSTALL_ROOT="$FAKE_ROOT" bash "$ROOT/scripts/check-caddy-drift.sh" >/dev/null 2>&1; then
+  fail "drift gate must reject a replaced gateway template"
+fi
+if SEARCH_STACK_TEST_MODE=1 INSTALL_ROOT="$FAKE_ROOT" bash "$ROOT/update.sh" >/dev/null 2>&1; then
+  fail "update must stop before service mutation when ingress has drifted"
+fi
+cp "$TMP/reviewed-caddy" "$INSTALLED_CADDY"
+
 printf '=== Step 3: Test idempotency (do not overwrite existing env) ===\n'
 
 printf 'EXISTING_CUSTOM_CONFIG=keep_me\n' > "$INSTALLED_ENV"

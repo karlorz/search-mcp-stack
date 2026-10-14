@@ -59,7 +59,7 @@ git submodule update --init --recursive
    - If verified, GrokSearch processes the search tool request, forwarding queries to `GUDA_BASE_URL` with machine key `GUDA_API_KEY`.
    - ChatGPT web and Doubao use OAuth instead of a pasted bearer. Discovery, registration, consent, and token routes stay on the gateway (Caddy fallback). `/mcp` stays on FastMCP. Set `GROK_SEARCH_MCP_OAUTH_ISSUER` only after the gateway is serving `/.well-known/oauth-protected-resource/mcp`. OAuth-minted `gsk_` keys are for `/mcp` only. `install.sh` and `update.sh` deploy the GrokSearch checkout, not the gateway pin; deploy the gateway with its own installer first.
    - For `grok-search` Skill+CLI OAuth (`auth-start` / `auth-status`), GrokSearch acts as the approve+poll coordinator bridging to the gateway OAuth server. Install/update in this repo deploys GrokSearch MCP and stack Caddy routing, not the gateway. The operator provisions the fixed public CLI OAuth client on the deployed gateway via `POST /register` with redirect URI `https://search.karldigi.dev/auth/cli/callback`, then puts the returned `client_id` in `/etc/grok-search-mcp.env` (`GROK_SEARCH_CLI_OAUTH_CLIENT_ID`).
-   - **Template Drift Note**: The gateway installer maintains its own template at `gateway/scripts/templates/Caddyfile.code-guda-gateway` which only knows about `/internal*` and fallback. If the gateway installer is rerun, the stack-owned Caddy snippet (`caddy/Caddyfile.code-guda-gateway`) must be reapplied (e.g. by rerunning `install.sh --skip-mcp` or copying the snippet) so that `/auth/cli/*` and `/mcp*` routes to port 8800 are not overwritten.
+   - **Template drift gate**: The gateway installer maintains its own template at `gateway/scripts/templates/Caddyfile.code-guda-gateway` which only knows about `/internal*` and fallback. If the gateway installer is rerun, the stack-owned Caddy snippet (`caddy/Caddyfile.code-guda-gateway`) must be reapplied (render with `install.sh --render-only` into a staging root and copy the reviewed snippet) so that `/auth/cli/*` and `/mcp*` routes to port 8800 are not overwritten. Run `bash scripts/check-caddy-drift.sh` after either installer; `update.sh` enforces that read-only gate before changing the service. Validate the complete imported config with `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile` before a separately authorized reload. The gate intentionally requires exact template parity; carry custom ingress changes in the reviewed stack template.
 
 3. **Public Engine Identity**:
    - A fresh install renders `GROK_SEARCH_MCP_PUBLIC_URL=https://search.karldigi.dev/mcp` into `/etc/grok-search-mcp.env` from the selected `--domain` and MCP path.
@@ -113,3 +113,22 @@ sudo ./update.sh --public-mcp-url https://search.karldigi.dev/mcp
 ```
 
 On the first update after this feature lands, pass the deployment's real public URL explicitly. `update.sh` adds it to an existing `/etc/grok-search-mcp.env` only when the variable is absent. Existing credentials and operator-defined values are preserved, repeated updates do not duplicate the entry, and a custom-domain deployment is never mislabeled with the production default.
+
+## CLI bridge validation and rollout gates
+
+`bash scripts/test-cli-gateway-feasibility.sh` exports the exact `GUDA_GATEWAY_SHA`,
+substitutes only test callback URIs with the hosted CLI callback, and tests
+registration, operator consent, PKCE, one-shot exchange, verification, expiry,
+revocation and provider-facade denial with dummy credentials. It does not change
+the gateway checkout or deploy anything. Run `python3 scripts/test-caddy-routes.py`
+with `CADDY_BIN` pointing to a local Caddy 2.10+ binary for actual adapt/validate
+and staged routing tests against dummy upstreams.
+
+CLI auth runs live in one Python process and disappear after restart. A lost
+collection response requires a new approval; never retry the code exchange or
+recover a machine key. Provision a fixed public client only after verifying the
+deployed gateway OAuth metadata, then set the client ID in the service env. Only
+`https://search.karldigi.dev/auth/cli/callback` is allowed for that client. Keep
+operator passwords on the gateway page. Source tests do not establish deployed
+phone/QR/Grok acceptance, and do not authorize a production reload or a new pin.
+The existing M2 routes remain available; no new M2 rollout is part of this repair.
