@@ -1,6 +1,6 @@
 {{DOMAIN}} {
 	# Never retain callback codes, approval references or authorization parameters.
-	@sensitive path /auth/cli/* /authorize /token
+	@sensitive path /auth/cli/* /authorize /authorize/* /token
 	log_skip @sensitive
 	handle /internal* {
 		respond 404
