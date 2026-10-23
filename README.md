@@ -136,6 +136,38 @@ full Caddy config, and reload before updating.
 
 ## CLI bridge validation and rollout gates
 
+## MCP authorization rollout and acceptance
+
+Deploy the checksum-verified gateway release `v0.3.22-stable` first, using its
+installer with `--skip-caddy` to preserve stack-owned ingress. Before installing,
+take an online SQLite backup and retain the current gateway release, service
+unit, environment files and GrokSearch revision in a root-only rollback directory.
+Keep existing registrations and credentials; the gateway binds legacy grants to
+the canonical resource and initializes refresh-family history at startup.
+
+After the gateway is healthy, update this stack checkout and run `update.sh`
+with the recorded domain, gateway address and public MCP URL. The updater checks
+ingress parity, installs the pinned GrokSearch revision and restarts MCP. Validate
+the full Caddy configuration before and after deployment. Binary rollback can
+retain the additive database schema; do not restore a stale database after new
+tokens have been issued.
+
+Run the repeatable acceptance probe using GrokSearch's locked Python environment:
+
+```bash
+uv run --project /opt/GrokSearch python scripts/check-mcp-authorization.py \
+  --require-cimd --require-auth
+```
+
+Supply an existing credential through `GROK_SEARCH_MCP_TOKEN` in the process
+environment, never as a command argument. `--origin` supports another deployment;
+`--token-env` selects another environment variable. The probe checks both resource
+metadata locations, authorization discovery, PKCE advertisement, the anonymous
+401 challenge, and a real SDK initialize/list/call exchange. Output is redacted.
+It does not perform an interactive client login or mutate settings. Keep gateway
+PKCE, scope, refresh-replay and migration tests as release gates, and separately
+record any client UI flows exercised during rollout.
+
 `bash scripts/test-cli-gateway-feasibility.sh` exports the exact `GUDA_GATEWAY_SHA`,
 substitutes only test callback URIs with the hosted CLI callback, and tests
 registration, operator consent, PKCE, one-shot exchange, verification, expiry,
