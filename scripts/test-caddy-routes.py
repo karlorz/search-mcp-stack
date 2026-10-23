@@ -81,7 +81,7 @@ try:
                     with request(route, 'POST' if route in ['/auth/cli/start', '/api/v1/search', '/api/v1/fetch', '/api/v1/map'] else 'GET') as response:
                         data = json.load(response)
                         assert data == {'upstream': 'mcp', 'path': route}, data
-                for route in ['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource/mcp', '/authorize?state=dummy-sensitive-authorize', '/register', '/token?code=dummy-sensitive-token', '/admin', '/health?control=ordinary-request', '/grok/v1/models']:
+                for route in ['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource/mcp', '/authorize?state=dummy-sensitive-authorize', '/authorize/github/callback?code=dummy-sensitive-github-code&state=dummy-sensitive-github-state', '/register', '/token?code=dummy-sensitive-token', '/admin', '/health?control=ordinary-request', '/grok/v1/models']:
                     with request(route, 'POST' if route.startswith('/token?') else 'GET') as response:
                         assert json.load(response) == {'upstream': 'gateway', 'path': route}
                 before = (len(mcp_seen), len(gateway_seen))
@@ -103,9 +103,9 @@ try:
         logged_urls = [entry['request']['uri'] for entry in access_entries]
         assert '/health?control=ordinary-request' in logged_urls, 'ordinary control request missing from actual HTTP access log'
         assert '/mcp' in logged_urls, 'MCP control request missing from actual HTTP access log'
-        assert not any(url.split('?')[0] in ['/authorize', '/token'] or url.startswith('/auth/cli/') for url in logged_urls), logged_urls
+        assert not any(url.split('?')[0] in ['/authorize', '/token'] or url.startswith('/authorize/') or url.startswith('/auth/cli/') for url in logged_urls), logged_urls
         assert 'dummy-sensitive-' not in access_text
-        print('Caddy adapt/validate and 20 staged route probes passed; actual HTTP access log records controls and skips sensitive URLs.')
+        print('Caddy adapt/validate and 21 staged route probes passed; actual HTTP access log records controls and skips sensitive URLs.')
 finally:
     mcp.shutdown()
     mcp.server_close()
